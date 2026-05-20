@@ -4,6 +4,7 @@ build/
 
 # IDE settings
 .idea/
+.idea
 *.iml
 
 # Kotlin compilation cache
