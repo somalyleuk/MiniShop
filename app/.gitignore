@@ -1,6 +1,14 @@
-/build
-proguard-rules.pro
+# Android / Gradle build outputs
+build/
 .gradle/
-*.iml
+
+# IDE settings
 .idea/
+*.iml
+
+# Kotlin compilation cache
 .kotlin/
+.kotlin
+
+# Proguard rules (Keep local, but usually optional to ignore unless auto-generated)
+proguard-rules.pro
