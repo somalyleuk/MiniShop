@@ -1,1 +1,6 @@
 /build
+proguard-rules.pro
+.gradle/
+*.iml
+.idea/
+.kotlin/
