@@ -1,14 +1,15 @@
 package com.app.minishop.core.di
 
 import com.app.minishop.core.common.Constants
-import com.app.minishop.core.network.GenericApiEngine
-import com.app.minishop.core.security.StorageService
+import com.app.minishop.core.network.NetworkService
+import com.app.minishop.core.network.interceptor.AuthInterceptor
+import com.app.minishop.core.network.interceptor.TokenAuthenticator
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -22,48 +23,34 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideGson(): Gson = Gson()
+    fun provideGson(): Gson = GsonBuilder().create()
 
     @Provides
     @Singleton
-    fun provideAuthInterceptor(storageService: StorageService): Interceptor {
-        return Interceptor { chain ->
-            val originalRequest = chain.request()
-            val requestBuilder = originalRequest.newBuilder()
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
-
-            val token = storageService.getSecureToken()
-            if (!token.isNullOrBlank()) {
-                requestBuilder.header("Authorization", "Bearer $token")
-            }
-
-            chain.proceed(requestBuilder.build())
-        }
-    }
-
-    @Provides
-    @Singleton
-    fun provideOkHttpClient(authInterceptor: Interceptor): OkHttpClient {
-        val logging = HttpLoggingInterceptor().apply {
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        tokenAuthenticator: TokenAuthenticator
+    ): OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(authInterceptor)
+        .addInterceptor(HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
-        }
-        return OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .addInterceptor(authInterceptor)
-            .addInterceptor(logging)
-            .build()
-    }
+        })
+        .authenticator(tokenAuthenticator)
+        .connectTimeout(Constants.CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .readTimeout(Constants.READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .writeTimeout(Constants.WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .build()
 
     @Provides
     @Singleton
-    fun provideGenericApiEngine(okHttpClient: OkHttpClient): GenericApiEngine {
-        return Retrofit.Builder()
-            .baseUrl(Constants.BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(GenericApiEngine::class.java)
-    }
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit = Retrofit.Builder()
+        .baseUrl(Constants.BASE_URL)
+        .client(okHttpClient)
+        .addConverterFactory(GsonConverterFactory.create(gson))
+        .build()
+
+    @Provides
+    @Singleton
+    fun provideNetworkService(retrofit: Retrofit): NetworkService =
+        retrofit.create(NetworkService::class.java)
 }

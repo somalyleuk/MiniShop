@@ -7,6 +7,9 @@ sealed interface Screen {
     data object Splash : Screen
 
     @Serializable
+    data object Onboarding : Screen
+
+    @Serializable
     data object Home : Screen
 
     @Serializable
@@ -16,7 +19,10 @@ sealed interface Screen {
     data object Register : Screen
 
     @Serializable
-    data object ProductList : Screen
+    data object Categories : Screen
+
+    @Serializable
+    data class ProductList(val category: String? = null) : Screen
 
     @Serializable
     data class ProductDetail(val productId: Int) : Screen
@@ -25,8 +31,17 @@ sealed interface Screen {
     data object Cart : Screen
 
     @Serializable
+    data object Checkout : Screen
+
+    @Serializable
+    data object OrderSuccess : Screen
+
+    @Serializable
     data object AIChat : Screen
 
     @Serializable
     data object Tracking : Screen
+
+    @Serializable
+    data object Profile : Screen
 }

@@ -1,14 +1,11 @@
 package com.app.minishop.core.network
 
-sealed interface ApiResult<out T> {
-
-    data class Success<T>(
-        val data: T
-    ) : ApiResult<T>
-
+sealed class ApiResult<out T> {
+    data class Success<T>(val data: T) : ApiResult<T>()
     data class Error(
-        val exception: Throwable
-    ) : ApiResult<Nothing>
-
-    data object Loading : ApiResult<Nothing>
+        val code: Int? = null,
+        val message: String? = null,
+        val exception: Throwable? = null
+    ) : ApiResult<Nothing>()
+    class Loading<T> : ApiResult<T>()
 }

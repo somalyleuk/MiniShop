@@ -1,10 +1,14 @@
 package com.app.minishop.presentation.product
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -12,21 +16,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.app.minishop.domain.model.Product
-import com.app.minishop.ui.theme.AppIcons
-import com.app.minishop.ui.theme.dimens
+import com.app.minishop.ui.component.loading.FullScreenLoading
+import com.app.minishop.ui.component.loading.ShimmerCard
+import com.app.minishop.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductListScreen(
     onProductClick: (Int) -> Unit,
+    onBackClicked: (() -> Unit)? = null,
+    title: String = "Products",
     viewModel: ProductViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -35,56 +41,65 @@ fun ProductListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("MiniShop", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            )
-        },
-        modifier = modifier.fillMaxSize()
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
-        ) {
-            when (val state = uiState) {
-                is ProductUiState.Loading -> CircularProgressIndicator()
-                is ProductUiState.Success -> {
-                    if (state.list.isEmpty()) {
-                        Text("No items currently available.", style = MaterialTheme.typography.bodyLarge)
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(MaterialTheme.dimens.medium),
-                            verticalArrangement = Arrangement.spacedBy(MaterialTheme.dimens.medium)
-                        ) {
-                            items(state.list, key = { it.id }) { product ->
-                                ProductItemRow(
-                                    product = product,
-                                    onClick = { onProductClick(product.id.toInt()) }
-                                )
-                            }
+                title = { Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = White),
+                navigationIcon = {
+                    if (onBackClicked != null) {
+                        IconButton(onClick = onBackClicked) {
+                            Icon(Icons.Default.ArrowBack, null)
                         }
                     }
                 }
-                is ProductUiState.Error -> {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(MaterialTheme.dimens.large)
+            )
+        },
+        modifier = modifier.fillMaxSize(),
+        containerColor = GrayLighter
+    ) { paddingValues ->
+        when (val state = uiState) {
+            is ProductUiState.Loading -> {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize().padding(paddingValues).padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(6) { ShimmerCard(modifier = Modifier.fillMaxWidth()) }
+                }
+            }
+            is ProductUiState.Success -> {
+                if (state.list.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                        Text("No products found", color = GrayDark)
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 12.dp),
+                        contentPadding = PaddingValues(vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = state.message,
-                            color = MaterialTheme.colorScheme.error,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        Spacer(modifier = Modifier.height(MaterialTheme.dimens.medium))
-                        Button(onClick = { viewModel.loadProducts() }) {
-                            Text("Retry Connection")
+                        items(state.list, key = { it.id }) { product ->
+                            ProductGridCard(product = product, onClick = { onProductClick(product.id) })
                         }
+                    }
+                }
+            }
+            is ProductUiState.Error -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                        Text("😕", fontSize = 48.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(state.message, color = ErrorRed, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { viewModel.loadProducts() },
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("Retry") }
                     }
                 }
             }
@@ -93,72 +108,52 @@ fun ProductListScreen(
 }
 
 @Composable
-fun ProductItemRow(product: Product, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        elevation = CardDefaults.cardElevation(defaultElevation = MaterialTheme.dimens.cardElevation),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+fun ProductGridCard(product: Product, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(White)
+            .clickable(onClick = onClick)
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(MaterialTheme.dimens.medium),
-            verticalAlignment = Alignment.CenterVertically
+                .height(150.dp)
+                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                .background(GrayLighter),
+            contentAlignment = Alignment.Center
         ) {
             AsyncImage(
-                model = product.displayImage,
-                contentDescription = product.title,
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White)
-                    .padding(MaterialTheme.dimens.extraSmall),
-                contentScale = ContentScale.Inside
+                model = product.imageUrl,
+                contentDescription = product.name,
+                modifier = Modifier.fillMaxSize().padding(12.dp),
+                contentScale = ContentScale.Fit
             )
-
-            Spacer(modifier = Modifier.width(MaterialTheme.dimens.medium))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = product.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = product.category.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-                Spacer(modifier = Modifier.height(MaterialTheme.dimens.small))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "$${String.format("%.2f", product.price)}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = AppIcons.Star,
-                            contentDescription = "Rating Star",
-                            tint = Color(0xFFFFB200),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(MaterialTheme.dimens.extraSmall))
-                        Text(
-                            text = "${product.ratingScore} (${product.totalReviews})",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
+        }
+        Column(modifier = Modifier.padding(10.dp)) {
+            Text(
+                product.name,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = DarkText,
+                lineHeight = 17.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                "⭐ ${String.format("%.1f", product.rating)} (${product.reviewCount})",
+                fontSize = 11.sp,
+                color = GrayDark
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                "$${String.format("%.2f", product.price)}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = PrimaryGreen
+            )
         }
     }
 }
