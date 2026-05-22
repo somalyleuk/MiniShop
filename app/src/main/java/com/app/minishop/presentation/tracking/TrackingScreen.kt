@@ -22,13 +22,12 @@ fun TrackingScreen(
     onBackClicked: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        // Simulated Map Background
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFE5E7EB)) // Light gray for map background
+                .background(Color(0xFFE5E7EB))
         ) {
-            // Placeholder for Google Map
             Text(
                 "Map View Placeholder",
                 modifier = Modifier.align(Alignment.Center),
@@ -36,7 +35,6 @@ fun TrackingScreen(
             )
         }
 
-        // Top Bar
         Row(
             modifier = Modifier
                 .statusBarsPadding()
@@ -92,7 +90,6 @@ fun TrackingScreen(
 
                 Spacer(modifier = Modifier.height(MaterialTheme.dimens.large))
 
-                // Progress Stepper
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween

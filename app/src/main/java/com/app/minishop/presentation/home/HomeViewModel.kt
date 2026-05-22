@@ -17,18 +17,14 @@ class HomeViewModel @Inject constructor(
     private val getProductsUseCase: GetProductsUseCase
 ) : ViewModel() {
 
-    private val _productsState = MutableStateFlow<ApiResult<List<Product>>>(ApiResult.Loading)
+    private val _productsState = MutableStateFlow<ApiResult<List<Product>>>(ApiResult.Loading())
     val productsState: StateFlow<ApiResult<List<Product>>> = _productsState.asStateFlow()
 
-    init {
-        loadProducts()
-    }
+    init { loadProducts() }
 
     fun loadProducts() {
         viewModelScope.launch {
-            getProductsUseCase().collect { result ->
-                _productsState.value = result
-            }
+            getProductsUseCase().collect { _productsState.value = it }
         }
     }
 }

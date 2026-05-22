@@ -79,7 +79,7 @@ fun MiniShopTheme(
     ProvideDimens(dimens = dimens) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = Typography,
+            typography = AppTypography,
             content = content
         )
     }

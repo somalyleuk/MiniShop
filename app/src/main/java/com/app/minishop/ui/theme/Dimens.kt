@@ -10,22 +10,57 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 data class Dimens(
+    // Spacing
     val extraSmall: Dp = 4.dp,
     val small: Dp = 8.dp,
+    val smallMedium: Dp = 12.dp,
     val medium: Dp = 16.dp,
+    val mediumLarge: Dp = 20.dp,
     val large: Dp = 24.dp,
     val extraLarge: Dp = 32.dp,
+    val xxLarge: Dp = 48.dp,
+
+    // Grid & Layout
     val gridSpacing: Dp = 16.dp,
     val screenPadding: Dp = 16.dp,
+    val cardPadding: Dp = 12.dp,
+    val sectionSpacing: Dp = 24.dp,
+
+    // Component Sizing
     val buttonHeight: Dp = 56.dp,
-    val cardElevation: Dp = 2.dp
+    val smallButtonHeight: Dp = 40.dp,
+    val textFieldHeight: Dp = 52.dp,
+    val iconSize: Dp = 24.dp,
+    val largeIconSize: Dp = 32.dp,
+    val smallIconSize: Dp = 18.dp,
+
+    // Radius
+    val radiusSmall: Dp = 8.dp,
+    val radiusMedium: Dp = 12.dp,
+    val radiusLarge: Dp = 16.dp,
+    val radiusXLarge: Dp = 20.dp,
+    val radiusRound: Dp = 50.dp,
+
+    // Elevation & Shadow
+    val cardElevation: Dp = 2.dp,
+    val bottomSheetElevation: Dp = 16.dp,
+
+    // Card Sizing
+    val productCardWidth: Dp = 160.dp,
+    val productCardHeight: Dp = 220.dp,
+    val productImageHeight: Dp = 140.dp,
+
+    // Other
+    val dividerHeight: Dp = 1.dp,
+    val badgeSize: Dp = 24.dp
 )
 
 val SmallDimens = Dimens(
     small = 4.dp,
     medium = 8.dp,
     large = 16.dp,
-    screenPadding = 12.dp
+    screenPadding = 12.dp,
+    sectionSpacing = 16.dp
 )
 
 val DefaultDimens = Dimens()

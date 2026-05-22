@@ -1,41 +1,39 @@
 package com.app.minishop.data.repository
 
 import com.app.minishop.core.network.ApiResult
-import com.app.minishop.core.network.ApiService
-import com.app.minishop.data.entity.ProductEntity
-import com.app.minishop.data.entity.toDomainModel
+import com.app.minishop.core.network.mapResult
+import com.app.minishop.data.datasource.remote.ProductRemoteDataSource
+import com.app.minishop.data.entity.remote.toDomain
 import com.app.minishop.domain.model.Product
 import com.app.minishop.domain.repository.ProductRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
 
 class ProductRepositoryImpl @Inject constructor(
-    private val apiService: ApiService,
+    private val remoteDataSource: ProductRemoteDataSource
 ) : ProductRepository {
 
-    override fun getProducts(): Flow<ApiResult<List<Product>>> = flow {
-        emit(ApiResult.Loading)
-        val response = apiService.get<List<ProductEntity>>("products")
-        val processedResponse = when (response) {
-            is ApiResult.Success -> {
-                val domainModels = response.data.map { it.toDomainModel() }
-                ApiResult.Success(domainModels)
-            }
-            is ApiResult.Error -> ApiResult.Error(response.exception)
-            is ApiResult.Loading -> ApiResult.Loading
+    override fun getProducts(category: String?): Flow<ApiResult<List<Product>>> =
+        remoteDataSource.getProducts(category).mapResult { entities ->
+            entities.map { it.toDomain() }
         }
-        emit(processedResponse)
-    }
 
-    override fun getProductById(id: Long): Flow<ApiResult<Product>> = flow {
-        emit(ApiResult.Loading)
-        val response = apiService.get<ProductEntity>("products/$id")
-        val processedResponse = when (response) {
-            is ApiResult.Success -> ApiResult.Success(response.data.toDomainModel())
-            is ApiResult.Error -> ApiResult.Error(response.exception)
-            is ApiResult.Loading -> ApiResult.Loading
+    override fun getProductById(id: Int): Flow<ApiResult<Product>> =
+        remoteDataSource.getProductById(id).mapResult { it.toDomain() }
+
+    override fun searchProducts(query: String): Flow<ApiResult<List<Product>>> =
+        remoteDataSource.getProducts().mapResult { entities ->
+            entities.filter { it.title.contains(query, ignoreCase = true) }
+                .map { it.toDomain() }
         }
-        emit(processedResponse)
-    }
+
+    override fun getFavorites(): Flow<ApiResult<List<Product>>> =
+        flowOf(ApiResult.Success(emptyList()))
+
+    override fun addToFavorites(productId: Int): Flow<ApiResult<Unit>> =
+        flowOf(ApiResult.Success(Unit))
+
+    override fun removeFromFavorites(productId: Int): Flow<ApiResult<Unit>> =
+        flowOf(ApiResult.Success(Unit))
 }

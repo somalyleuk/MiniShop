@@ -2,7 +2,9 @@ package com.app.minishop.core.security
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
@@ -19,14 +21,10 @@ class StorageService @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val appThemeKey = stringPreferencesKey("app_theme")
-    private val SECURE_PREFS_NAME = "minishopkh_secure_prefs"
-    private val KEY_ACCESS_TOKEN = "access_token"
-
-    private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
 
     private val securePrefs = EncryptedSharedPreferences.create(
-        SECURE_PREFS_NAME,
-        masterKeyAlias,
+        "minishopkh_secure_prefs",
+        MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC),
         context,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
@@ -38,15 +36,27 @@ class StorageService @Inject constructor(
         context.dataStore.edit { it[appThemeKey] = theme }
     }
 
-    fun saveSecureToken(token: String) {
+    fun getToken(): String = securePrefs.getString(KEY_ACCESS_TOKEN, null) ?: ""
+
+    fun setToken(token: String) {
         securePrefs.edit().putString(KEY_ACCESS_TOKEN, token).apply()
     }
 
-    fun getSecureToken(): String? {
-        return securePrefs.getString(KEY_ACCESS_TOKEN, null)
+    fun getRefreshToken(): String? = securePrefs.getString(KEY_REFRESH_TOKEN, null)
+
+    fun setRefreshToken(token: String) {
+        securePrefs.edit().putString(KEY_REFRESH_TOKEN, token).apply()
     }
 
     fun clearSession() {
-        securePrefs.edit().remove(KEY_ACCESS_TOKEN).apply()
+        securePrefs.edit()
+            .remove(KEY_ACCESS_TOKEN)
+            .remove(KEY_REFRESH_TOKEN)
+            .apply()
+    }
+
+    companion object {
+        private const val KEY_ACCESS_TOKEN = "access_token"
+        private const val KEY_REFRESH_TOKEN = "refresh_token"
     }
 }
